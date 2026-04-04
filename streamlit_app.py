@@ -1,11 +1,11 @@
 import streamlit as st
 from app.services.evaluator import evaluate_url_for_default_profile
 
-st.set_page_config(page_title="Housing Agent", page_icon="🏠", layout="centered")
-st.title("🏠 Housing Agent")
-st.caption("Paste a listing URL to get a full evaluation.")
+st.set_page_config(page_title="WG-fit Agent", page_icon="🏠", layout="centered")
+st.title("🏠 Flatshare-fit Agent")
+st.caption("Paste a WG/Flatshare listing URL to get a full evaluation.")
 
-url = st.text_input("WG-Gesucht URL", placeholder="https://www.wg-gesucht.de/...")
+url = st.text_input("Listing URL", placeholder="https://www.wg-gesucht.de/...")
 
 if st.button("Evaluate", type="primary", disabled=not url):
     with st.spinner("Fetching and evaluating listing…"):

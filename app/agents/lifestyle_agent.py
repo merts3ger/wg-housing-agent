@@ -93,6 +93,7 @@ Rules:
 """
 
 
+
 def assess_lifestyle_and_daily_fit(
     user_profile: UserProfile,
     enriched_listing: EnrichedListing,
