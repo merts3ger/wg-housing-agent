@@ -1,1 +1,4 @@
 # wg-housing-agent
+I built this project after a familiar frustration while searching for flatshares as a student in Germany: after using the usual listing filters, I'd still be left guessing whether a room was worth pursuing once budget, commute, furnishing needs, and the social vibe of the WG all had to be weighed together for my situation.
+
+The app takes a flatshare URL, extracts structured information from the ad text, enriches it with location context, and evaluates it through specialized agents focused on budget/value and lifestyle compatibility. The architecture combines Azure OpenAI (GPT-4o-mini), Azure Maps, and a modular multi-agent workflow with a final moderator layer for synthesis. The MVP is wrapped in a Streamlit interface and deployed through a CI/CD pipeline using GitHub Actions and Azure.
