@@ -11,7 +11,10 @@ _DEMO_API_KEY = os.getenv("DEMO_API_KEY")
 
 
 @app.middleware("http")
+
+
 async def demo_key_guard(request: Request, call_next):
+    print(f"DEBUG middleware: {request.method} {request.url.path}")
     if _DEMO_API_KEY and request.url.path != "/health":
         if request.headers.get("X-Demo-Key") != _DEMO_API_KEY:
             return JSONResponse({"detail": "Unauthorized"}, status_code=401)

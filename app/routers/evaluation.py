@@ -6,16 +6,10 @@ from pydantic import BaseModel, model_validator
 from app.schemas.profile import UserProfile
 from app.schemas.result import FinalRecommendation
 from app.schemas.evaluation import EvaluationResponse
-from app.graph.state import HousingGraphState
-from app.graph.graph_builder import build_housing_graph
 from app.services.url_fetcher import fetch_listing_text_from_url
-from app.services.evaluator import evaluate_url_for_default_profile
+from app.services.evaluator import evaluate_url_for_default_profile, run_graph
 
 router = APIRouter()
-
-# Transitional: single compiled graph for /evaluate.
-# Step 2 will collapse this into evaluator.py.
-_housing_graph = build_housing_graph()
 
 
 class EvaluateRequest(BaseModel):
@@ -46,24 +40,10 @@ def evaluate(request: EvaluateRequest) -> FinalRecommendation:
     else:
         listing_text = request.raw_listing_text  # type: ignore[assignment]
 
-    initial_state: HousingGraphState = {
-        "raw_listing_text": listing_text,
-        "user_profile": request.user_profile,
-        "parsed_listing": None,
-        "enriched_listing": None,
-        "budget_assessment": None,
-        "lifestyle_assessment": None,
-        "final_recommendation": None,
-        "errors": [],
-    }
-
-    result = _housing_graph.invoke(initial_state)
-
-    final_recommendation = result.get("final_recommendation")
-    if final_recommendation is None:
-        raise HTTPException(status_code=500, detail="Graph completed without producing a recommendation.")
-
-    return final_recommendation
+    try:
+        return run_graph(listing_text, request.user_profile)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("/evaluate-url", response_model=EvaluationResponse, summary="Evaluate a WG-Gesucht URL using the default profile")
