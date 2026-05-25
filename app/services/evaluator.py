@@ -8,7 +8,7 @@ Usage:
 
 from app.schemas.profile import UserProfile
 from app.schemas.evaluation import EvaluationResponse, ListingSnapshot
-from app.schemas.result import AgentAssessment
+from app.schemas.result import AgentAssessment, FinalRecommendation
 from app.graph.state import HousingGraphState
 from app.graph.graph_builder import build_housing_graph
 from app.services.url_fetcher import fetch_listing_text_from_url
@@ -32,13 +32,10 @@ DEFAULT_PROFILE = UserProfile(
 _graph = build_housing_graph()
 
 
-def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
-    """Fetch, parse, enrich, and evaluate a listing using the default profile."""
-    listing_text = fetch_listing_text_from_url(url)
-
+def run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendation:
     initial_state: HousingGraphState = {
         "raw_listing_text": listing_text,
-        "user_profile": DEFAULT_PROFILE,
+        "user_profile": user_profile,
         "parsed_listing": None,
         "enriched_listing": None,
         "budget_assessment": None,
@@ -46,15 +43,19 @@ def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
         "final_recommendation": None,
         "errors": [],
     }
-
     result = _graph.invoke(initial_state)
-
     rec = result.get("final_recommendation")
     if rec is None:
         raise RuntimeError("Pipeline completed without producing a recommendation.")
+    return rec
+
+
+def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
+    listing_text = fetch_listing_text_from_url(url)
+    rec = run_graph(listing_text, DEFAULT_PROFILE)
 
     # --- debug: pipeline internals ---
-    enriched = result.get("enriched_listing")
+    enriched = rec.evaluated_listing
     if enriched:
         print(f"[evaluator] address_text={enriched.address_text!r}  neighborhood={enriched.neighborhood!r}  location_precision={enriched.location_precision!r}")
         print(f"[evaluator] commute_minutes={enriched.commute_minutes}  commute_confidence={enriched.commute_confidence!r}")

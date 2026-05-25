@@ -1,8 +1,12 @@
-import streamlit as st
-from app.services.evaluator import evaluate_url_for_default_profile
+import os
 
-st.set_page_config(page_title="WG-fit Agent", page_icon="🏠", layout="centered")
-st.title("🏠 Flatshare-fit Agent")
+import httpx
+import streamlit as st
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+
+st.set_page_config(page_title="Flatshare Fit Agent", page_icon="🏠", layout="centered")
+st.title("🏠 Flatshare Fit Agent")
 st.caption("Paste a WG/Flatshare listing URL to get a full evaluation.")
 
 url = st.text_input("Listing URL", placeholder="https://www.wg-gesucht.de/...")
@@ -10,8 +14,19 @@ url = st.text_input("Listing URL", placeholder="https://www.wg-gesucht.de/...")
 if st.button("Evaluate", type="primary", disabled=not url):
     with st.spinner("Fetching and evaluating listing…"):
         try:
-            result = evaluate_url_for_default_profile(url)
-            data = result.model_dump()
+            response = httpx.post(
+                f"{BACKEND_URL}/evaluate-url",
+                json={"url": url},
+                timeout=120,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except httpx.ConnectError:
+            st.error(f"Could not connect to backend at {BACKEND_URL}. Is the API server running?")
+            st.stop()
+        except httpx.HTTPStatusError as e:
+            st.error(f"Evaluation failed ({e.response.status_code}): {e.response.text}")
+            st.stop()
         except Exception as e:
             st.error(f"Evaluation failed: {e}")
             st.stop()
