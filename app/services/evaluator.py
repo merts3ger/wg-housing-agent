@@ -50,9 +50,9 @@ def run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendati
     return rec
 
 
-def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
+def evaluate_url_for_profile(url: str, user_profile: UserProfile) -> EvaluationResponse:
     listing_text = fetch_listing_text_from_url(url)
-    rec = run_graph(listing_text, DEFAULT_PROFILE)
+    rec = run_graph(listing_text, user_profile)
 
     # --- debug: pipeline internals ---
     enriched = rec.evaluated_listing
@@ -62,7 +62,7 @@ def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
     print(f"[evaluator] assessments in rec: {[a.agent_name for a in rec.assessments]}")
     # ---
 
-    # Pull individual agent assessments 
+    # Pull individual agent assessments
     assessments_by_name: dict[str, AgentAssessment] = {a.agent_name: a for a in rec.assessments}
     budget_assessment = assessments_by_name.get(
         "budget_and_value",
@@ -92,3 +92,7 @@ def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
         warnings=rec.warnings,
         questions_to_ask_host=rec.questions_to_ask_host,
     )
+
+
+def evaluate_url_for_default_profile(url: str) -> EvaluationResponse:
+    return evaluate_url_for_profile(url, DEFAULT_PROFILE)
