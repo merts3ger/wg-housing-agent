@@ -32,7 +32,7 @@ DEFAULT_PROFILE = UserProfile(
 _graph = build_housing_graph()
 
 
-def run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendation:
+def _run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendation:
     initial_state: HousingGraphState = {
         "raw_listing_text": listing_text,
         "user_profile": user_profile,
@@ -52,13 +52,13 @@ def run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendati
 
 def evaluate_url_for_profile(url: str, user_profile: UserProfile) -> EvaluationResponse:
     listing_text = fetch_listing_text_from_url(url)
-    rec = run_graph(listing_text, user_profile)
+    rec = _run_graph(listing_text, user_profile)
 
     # --- debug: pipeline internals ---
-    enriched = rec.evaluated_listing
-    if enriched:
-        print(f"[evaluator] address_text={enriched.address_text!r}  neighborhood={enriched.neighborhood!r}  location_precision={enriched.location_precision!r}")
-        print(f"[evaluator] commute_minutes={enriched.commute_minutes}  commute_confidence={enriched.commute_confidence!r}")
+    listing = rec.evaluated_listing
+    if listing:
+        print(f"[evaluator] address_text={listing.address_text!r}  neighborhood={listing.neighborhood!r}  location_precision={listing.location_precision!r}")
+        print(f"[evaluator] commute_minutes={listing.commute_minutes}  commute_confidence={listing.commute_confidence!r}")
     print(f"[evaluator] assessments in rec: {[a.agent_name for a in rec.assessments]}")
     # ---
 
@@ -73,7 +73,6 @@ def evaluate_url_for_profile(url: str, user_profile: UserProfile) -> EvaluationR
         AgentAssessment(agent_name="lifestyle_and_daily_fit", listing_title="", score=0.0, pros=[], cons=[]),
     )
 
-    listing = rec.evaluated_listing
     snapshot = ListingSnapshot(
         title=listing.title if listing else "Unknown",
         warm_rent=listing.warm_rent if listing else None,
