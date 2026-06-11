@@ -2,8 +2,8 @@
 Orchestration layer for the MVP single-profile evaluation flow.
 
 Usage:
-    from app.services.evaluator import evaluate_url_for_default_profile
-    result = evaluate_url_for_default_profile("https://www.wg-gesucht.de/...")
+    from app.services.evaluator import evaluate_url_for_profile
+    result = evaluate_url_for_profile("https://www.wg-gesucht.de/...", user_profile)
 """
 
 from app.schemas.profile import UserProfile
@@ -32,7 +32,7 @@ DEFAULT_PROFILE = UserProfile(
 _graph = build_housing_graph()
 
 
-def _run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendation:
+def run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendation:
     initial_state: HousingGraphState = {
         "raw_listing_text": listing_text,
         "user_profile": user_profile,
@@ -52,15 +52,9 @@ def _run_graph(listing_text: str, user_profile: UserProfile) -> FinalRecommendat
 
 def evaluate_url_for_profile(url: str, user_profile: UserProfile) -> EvaluationResponse:
     listing_text = fetch_listing_text_from_url(url)
-    rec = _run_graph(listing_text, user_profile)
+    rec = run_graph(listing_text, user_profile)
 
-    # --- debug: pipeline internals ---
     listing = rec.evaluated_listing
-    if listing:
-        print(f"[evaluator] address_text={listing.address_text!r}  neighborhood={listing.neighborhood!r}  location_precision={listing.location_precision!r}")
-        print(f"[evaluator] commute_minutes={listing.commute_minutes}  commute_confidence={listing.commute_confidence!r}")
-    print(f"[evaluator] assessments in rec: {[a.agent_name for a in rec.assessments]}")
-    # ---
 
     # Pull individual agent assessments
     assessments_by_name: dict[str, AgentAssessment] = {a.agent_name: a for a in rec.assessments}

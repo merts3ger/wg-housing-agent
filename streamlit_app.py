@@ -1,7 +1,11 @@
+import os
+
+import httpx
 import streamlit as st
 
 from app.schemas.profile import UserProfile
-from app.services.evaluator import evaluate_url_for_profile
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Flatshare Fit Agent", page_icon="🏠", layout="wide")
 st.title("🏠 Flatshare Fit Agent")
@@ -112,8 +116,19 @@ else:
     if st.button("Evaluate", type="primary", disabled=not url):
         with st.spinner("Fetching and evaluating listing…"):
             try:
-                result = evaluate_url_for_profile(url, st.session_state["user_profile"])
-                data = result.model_dump()
+                response = httpx.post(
+                    f"{BACKEND_URL}/evaluate-url-for-profile",
+                    json={"url": url, "user_profile": st.session_state["user_profile"].model_dump()},
+                    timeout=120,
+                )
+                response.raise_for_status()
+                data = response.json()
+            except httpx.ConnectError:
+                st.error(f"Could not connect to backend at {BACKEND_URL}. Is the API server running?")
+                st.stop()
+            except httpx.HTTPStatusError as e:
+                st.error(f"Evaluation failed ({e.response.status_code}): {e.response.text}")
+                st.stop()
             except Exception as e:
                 st.error(f"Evaluation failed: {e}")
                 st.stop()
