@@ -7,7 +7,7 @@ from app.schemas.profile import UserProfile
 from app.schemas.result import FinalRecommendation
 from app.schemas.evaluation import EvaluationResponse
 from app.services.url_fetcher import fetch_listing_text_from_url
-from app.services.evaluator import evaluate_url_for_default_profile, run_graph
+from app.services.evaluator import evaluate_url_for_default_profile, evaluate_url_for_profile, run_graph
 
 router = APIRouter()
 
@@ -26,6 +26,11 @@ class EvaluateRequest(BaseModel):
 
 class EvaluateUrlRequest(BaseModel):
     url: str
+
+
+class EvaluateUrlForProfileRequest(BaseModel):
+    url: str
+    user_profile: UserProfile
 
 
 @router.post("/evaluate", response_model=FinalRecommendation, summary="Evaluate one housing listing")
@@ -50,6 +55,17 @@ def evaluate(request: EvaluateRequest) -> FinalRecommendation:
 def evaluate_url(request: EvaluateUrlRequest) -> EvaluationResponse:
     try:
         return evaluate_url_for_default_profile(request.url)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/evaluate-url-for-profile", response_model=EvaluationResponse,
+             summary="Evaluate a WG-Gesucht URL against a supplied profile")
+def evaluate_url_for_profile_endpoint(request: EvaluateUrlForProfileRequest) -> EvaluationResponse:
+    try:
+        return evaluate_url_for_profile(request.url, request.user_profile)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
